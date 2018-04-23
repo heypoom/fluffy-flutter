@@ -44,6 +44,13 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
+  <false/>
+
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>iOS needs to spy on you</string>
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>iOS needs to spy on you</string>
+  <key>NSLocationAlwaysUsageDescription</key>
+  <string>iOS needs to spy on you</string>
 </dict>
 </plist>

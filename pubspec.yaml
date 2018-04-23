@@ -10,6 +10,7 @@ dependencies:
   cupertino_icons: ^0.1.0
   english_words: ^3.1.0
   local_notifications: any
+  geolocation: ^0.2.1
 
 dev_dependencies:
   flutter_test:

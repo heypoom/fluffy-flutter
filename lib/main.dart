@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
 import 'package:local_notifications/local_notifications.dart';
+import 'package:geolocation/geolocation.dart';
 
 void main() => runApp(new App());
 
@@ -13,6 +13,7 @@ class WordHeading extends StatefulWidget {
 class WordHeadingState extends State<WordHeading> {
   final _suggestions = <WordPair>[];
   final _saved = new Set<WordPair>();
+  int id = 0;
 
   final _biggerFont = new TextStyle(
     fontSize: 20.0,
@@ -50,10 +51,28 @@ class WordHeadingState extends State<WordHeading> {
         color: alreadySaved ? Colors.red : null,
       ),
       onTap: () async {
+        final perms = const LocationPermission(
+          android: LocationPermissionAndroid.fine,
+          ios: LocationPermissionIOS.always
+        );
+
+        final req = await Geolocation.requestLocationPermission(perms);
+
+        if (!req.isSuccessful) {
+          return;
+        }
+
+        final geoData = await Geolocation.currentLocation(
+          accuracy: LocationAccuracy.best,
+          inBackground: false
+        ).first;
+
+        final loc = geoData.location;
+
         await LocalNotifications.createNotification(
-          title: "ATTENTION PLEASE",
-          content: "Thank you for your attention.",
-          id: 0
+          title: "You are at queue #$id",
+          content: "Lat is ${loc.latitude} and Lon is ${loc.longitude}",
+          id: id++
         );
 
         setState(() {
