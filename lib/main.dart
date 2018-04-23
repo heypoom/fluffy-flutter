@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
+import 'package:local_notifications/local_notifications.dart';
 
 void main() => runApp(new App());
 
@@ -12,10 +14,10 @@ class WordHeadingState extends State<WordHeading> {
   final _suggestions = <WordPair>[];
   final _saved = new Set<WordPair>();
 
-  final _biggerFont = const TextStyle(
-    fontSize: 18.0,
+  final _biggerFont = new TextStyle(
+    fontSize: 20.0,
     color: Colors.teal,
-    fontFamily: "Sukhumvit Set",
+    fontFamily: "Roboto",
   );
 
   Widget _buildSuggestions() {
@@ -40,14 +42,20 @@ class WordHeadingState extends State<WordHeading> {
 
     return new ListTile(
       title: new Text(
-        wordPair.asPascalCase,
+        wordPair.join(" ~ "),
         style: _biggerFont,
       ),
       trailing: new Icon(
         alreadySaved ? Icons.favorite : Icons.favorite_border,
         color: alreadySaved ? Colors.red : null,
       ),
-      onTap: () {
+      onTap: () async {
+        await LocalNotifications.createNotification(
+          title: "ATTENTION PLEASE",
+          content: "Thank you for your attention.",
+          id: 0
+        );
+
         setState(() {
           if (alreadySaved) {
             _saved.remove(wordPair);
