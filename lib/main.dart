@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
 import 'package:local_notifications/local_notifications.dart';
-import 'package:geolocation/geolocation.dart';
 
-void main() => runApp(new App());
+import 'stations.dart';
+import 'watcher.dart';
+import 'store.dart';
 
-class WordHeading extends StatefulWidget {
-  @override
-  createState() => new WordHeadingState();
+void main() {
+  runApp(new App());
 }
 
-class WordHeadingState extends State<WordHeading> {
-  final _suggestions = <WordPair>[];
-  final _saved = new Set<WordPair>();
+class Landing extends StatefulWidget {
+  @override
+  createState() => new LandingState();
+}
+
+class LandingState extends State<Landing> {
+  final watcher = new LocationWatcher();
   int id = 0;
 
   final _biggerFont = new TextStyle(
@@ -21,29 +24,27 @@ class WordHeadingState extends State<WordHeading> {
     fontFamily: "Roboto",
   );
 
-  Widget _buildSuggestions() {
+  Widget _buildItems() {
     return new ListView.builder(
       padding: const EdgeInsets.all(16.0),
       itemBuilder: (context, i) {
         if (i.isOdd) return new Divider();
 
         final index = i ~/ 2;
+        final station = stations.values.elementAt(index);
 
-        if (index >= _suggestions.length) {
-          _suggestions.addAll(generateWordPairs().take(10));
-        }
-
-        return _buildRow(_suggestions[index]);
+        return _buildRow(station);
       },
+      itemCount: (stations.length * 2) - 1
     );
   }
 
-  Widget _buildRow(WordPair wordPair) {
-    final alreadySaved = _saved.contains(wordPair);
+  Widget _buildRow(Station station) {
+    final alreadySaved = store.whitelist.contains(station);
 
     return new ListTile(
       title: new Text(
-        wordPair.join(" ~ "),
+        station.name,
         style: _biggerFont,
       ),
       trailing: new Icon(
@@ -51,75 +52,43 @@ class WordHeadingState extends State<WordHeading> {
         color: alreadySaved ? Colors.red : null,
       ),
       onTap: () async {
-        final perms = const LocationPermission(
-          android: LocationPermissionAndroid.fine,
-          ios: LocationPermissionIOS.always
-        );
-
-        final req = await Geolocation.requestLocationPermission(perms);
-
-        if (!req.isSuccessful) {
-          return;
-        }
-
-        final geoData = await Geolocation.currentLocation(
-          accuracy: LocationAccuracy.best,
-          inBackground: false
-        ).first;
-
-        final loc = geoData.location;
-
-        await LocalNotifications.createNotification(
-          title: "You are at queue #$id",
-          content: "Lat is ${loc.latitude} and Lon is ${loc.longitude}",
-          id: id++
-        );
-
         setState(() {
           if (alreadySaved) {
-            _saved.remove(wordPair);
+            store.whitelist.remove(station);
           } else {
-            _saved.add(wordPair);
+            store.whitelist.add(station);
           }
         });
       },
     );
   }
 
-  void _pushSaved() {
-    final route = new MaterialPageRoute(builder: (context) {
-      final tiles = _saved.map((pair) => new ListTile(
-        title: new Text(
-          pair.asPascalCase,
-          style: _biggerFont,
-        ),
-      ));
-
-      final divided = ListTile
-        .divideTiles(context: context, tiles: tiles)
-        .toList();
-
-      return new Scaffold(
-        appBar: new AppBar(
-          title: new Text('Saved Suggestions'),
-        ),
-        body: new ListView(children: divided),
-      );
-    });
-
-    Navigator.of(context).push(route);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final name = store.lastKnown != null ? store.lastKnown.name : 'None';
+
     return new Scaffold(
       appBar: new AppBar(
-        title: new Text('Fluffy Rabbit 🐇'),
+        title: new Text('Metro Notifier 🚆'),
         actions: <Widget>[
-          new IconButton(icon: new Icon(Icons.list), onPressed: _pushSaved),
+          new IconButton(icon: new Icon(Icons.build), onPressed: watcher.start),
         ],
       ),
-      body: _buildSuggestions(),
+      body: new Column(
+        children: <Widget>[
+          new Padding(
+            padding: new EdgeInsets.only(top: 20.0),
+            child: new Text(
+              'Last Known Station: $name',
+              style: new TextStyle(fontSize: 23.0)
+            ),
+          ),
+          new Container(
+            height: 500.0,
+            child: this._buildItems()
+          )
+        ]
+      )
     );
   }
 }
@@ -129,7 +98,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return new MaterialApp(
       title: 'Fluffy Notifier',
-      home: new WordHeading(),
+      home: new Landing(),
       theme: new ThemeData(
         primaryColor: Colors.teal
       ),
